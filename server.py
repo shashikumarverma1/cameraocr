@@ -58,7 +58,8 @@ def submit_user(image: ImageData):
             # Step 4: OCR on cropped plate
             ocr_result = ocr_reader.readtext(plate_crop)
             if ocr_result:
-                plate_text = ocr_result[0][1]
+                plate_text =  " ".join([item[1] for item in ocr_result])
+                print(ocr_result , "ocr_result")
                 break  # Stop after first OCR match
         if plate_text:
             break  # Break outer loop if plate found
