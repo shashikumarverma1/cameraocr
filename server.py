@@ -33,24 +33,36 @@ class ImageData(BaseModel):
 
 @app.post("/detect")
 def submit_user(image: ImageData):
-     image_data = base64.b64decode(image.image)
-     nparr = np.frombuffer(image_data, np.uint8)
-     img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-     img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-     results = model.predict(img_rgb, imgsz=640, conf=0.5, int8=True)
+    import base64
+    import numpy as np
+    import cv2
 
-     for result in results:
-            boxes = result.boxes.xyxy.cpu().numpy()
-            for box in boxes:
-                x1, y1, x2, y2 = map(int, box)
-                plate_crop = img_rgb[y1:y2, x1:x2]
+    # Step 1: Decode the image
+    image_data = base64.b64decode(image.image)
+    nparr = np.frombuffer(image_data, np.uint8)
+    img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+    img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
-                # Step 4: OCR on cropped plate
-                ocr_result = ocr_reader.readtext(plate_crop)
-                if ocr_result:
-                    plate_text = ocr_result[0][1]
-                    break  # take first match 
-      
+    # Step 2: Run object detection
+    results = model.predict(img_rgb, imgsz=640, conf=0.5, int8=True)
 
-     return {"text":plate_text}
+    plate_text = ""  # Initialize to empty string
+
+    # Step 3: Process each detection
+    for result in results:
+        boxes = result.boxes.xyxy.cpu().numpy()
+        for box in boxes:
+            x1, y1, x2, y2 = map(int, box)
+            plate_crop = img_rgb[y1:y2, x1:x2]
+
+            # Step 4: OCR on cropped plate
+            ocr_result = ocr_reader.readtext(plate_crop)
+            if ocr_result:
+                plate_text = ocr_result[0][1]
+                break  # Stop after first OCR match
+        if plate_text:
+            break  # Break outer loop if plate found
+
+    return {"text": plate_text}
+
 

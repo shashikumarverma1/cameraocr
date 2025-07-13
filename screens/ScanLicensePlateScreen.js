@@ -50,7 +50,7 @@ const ScanLicensePlateScreen = () => {
     const base64 = await RNFS.readFile(photo?.path, 'base64');
       
 
-        const res = await axios.post('http://192.168.210.31:8000/detect', {
+        const res = await axios.post('http://192.168.210.85:8000/detect', {
         image:base64
       });
 
