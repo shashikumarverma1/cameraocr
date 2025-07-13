@@ -8,6 +8,8 @@ import {
   Alert,
   Dimensions,
 } from 'react-native';
+import RNFS from 'react-native-fs';
+import axios from 'axios';
 import { Camera, useCameraDevice, useCameraPermission } from 'react-native-vision-camera';
 import { useNavigation, useIsFocused } from '@react-navigation/native';
 import { Linking } from 'react-native';
@@ -45,12 +47,21 @@ const ScanLicensePlateScreen = () => {
       setIsProcessing(true);
       try {
         const photo = await camera.current.takePhoto();
-        const imagePath = `file://${photo.path}`;
-        const result = await TextRecognition.recognize(imagePath);
-        const licensePlateText = result.text.trim().replace(/\s+/g, '');
+    const base64 = await RNFS.readFile(photo?.path, 'base64');
+      
 
-        if (licensePlateText) {
-          navigation.navigate('AddCar', { licensePlate: licensePlateText });
+        const res = await axios.post('http://192.168.210.31:8000/detect', {
+        image:base64
+      });
+
+        // const licensePlateText = res.data.plate_number;
+        // navigation.navigate('AddCar', { licensePlate: licensePlateText });
+        // const imagePath = `file://${photo.path}`;
+    
+        // const result = await TextRecognition.recognize(imagePath);
+        // const licensePlateText = result.text.trim().replace(/\s+/g, '');
+        if (res?.data?.text) {
+          navigation.navigate('AddCar', { licensePlate: res?.data?.text });
         } else {
           Alert.alert('No Text Found', 'Could not detect a license plate. Please try again.');
         }
